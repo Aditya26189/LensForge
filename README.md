@@ -30,19 +30,20 @@ See [Task 3](#task-3--ditl4--ot-cfm-generative-model-d8-task3-trainipynb--d8-tas
 
 ## Repository Structure
 
-```
+```text
 lensforge/
-├── d8-task1.ipynb               # Task 1: C8-equivariant classification
-├── d8-task2.ipynb               # Task 2: Physics-guided D4 classification
-├── d8-task3.ipynb               # Task 3: DiT + OT-CFM generative model
-│
-├── ARCHITECTURE_d8-task1.md     # C8LensNet: architecture + training protocol
-├── ARCHITECTURE_d8-task2.md     # D4LensPINN: physics engine + two-phase schedule
-├── ARCHITECTURE_d8-task3.md     # DiT-L/4: OT-CFM + EMA workflow
-│
-├── d8-task1-output_files/       # Task 1 model checkpoints and outputs
-├── d8-task2-output_files/       # Task 2 phase checkpoints
 ├── chekcpoint saving/           # Additional saved checkpoints
+├── Task 1/
+│   ├── ARCHITECTURE_d8-task1.md # C8LensNet: architecture + training protocol
+│   ├── d8-task1.ipynb           # Task 1: C8-equivariant classification
+│   └── d8-task1-output_files/   # Task 1 model checkpoints and outputs
+├── Task 2/
+│   ├── ARCHITECTURE_d8-task2.md # D4LensPINN: physics engine + two-phase schedule
+│   ├── d8-task2.ipynb           # Task 2: Physics-guided D4 classification
+│   └── d8-task2-output_files/   # Task 2 phase checkpoints
+├── Task 3/
+│   ├── ARCHITECTURE_d8-task3.md # DiT-L/4: OT-CFM + EMA workflow
+│   └── d8-task3.ipynb           # Task 3: DiT + OT-CFM generative model
 └── README.md
 ```
 
