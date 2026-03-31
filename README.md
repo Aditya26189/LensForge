@@ -1,188 +1,120 @@
-# DeepLense GSoC 2026 — Notebook Guide (Task 1 + Task 2)
+# Gravitational Lensing Modeling Suite - Notebook Guide
 
-This README documents **only** the following two notebooks:
+This repository contains three core project notebooks:
 
-1. `submittable/d8-task1-final-11.ipynb`  
-2. `d8-task2 (6).ipynb`
+1. `d8-task1.ipynb`
+2. `d8-task2.ipynb`
+3. `d8-task3.ipynb`
 
----
+Architecture documents:
 
-## 1) What each notebook is for
+- `ARCHITECTURE_d8-task1.md`
+- `ARCHITECTURE_d8-task2.md`
+- `ARCHITECTURE_d8-task3.md`
 
-### A. `submittable/d8-task1-final-11.ipynb` (Common Test)
-This notebook is the Common Test baseline submission for 3-class strong lensing classification:
-- `no_sub` (no substructure)
-- `sphere` (CDM subhalo)
-- `vort` (axion vortex)
+## 1) Notebook purposes
 
-It compares:
-- **C8LensNet** (equivariant CNN, ~673k params)
-- **ResNet-18** baseline (~11.2M params)
+### A) `d8-task1.ipynb` (Task 1 classification)
+Verified from notebook code and markdown:
 
-Primary reported result in notebook text:
-- C8LensNet Macro AUC: **0.9715**
-- ResNet-18 Macro AUC: **0.9798**
+- 3-class lensing classification (`no`, `sphere`, `vort`)
+- C8-equivariant model (`C8LensNet`) vs `ResNet18Baseline`
+- robust percentile normalization and deterministic split logic
+- warmup + cosine scheduling via `LinearLR` + `CosineAnnealingLR` + `SequentialLR`
+- post-hoc vort calibration analysis (`vort_calibration.png`)
 
----
+Notebook-reported headline results in markdown/text output:
 
-### B. `d8-task2 (6).ipynb` (Specific Test VII: Physics-Guided ML)
-This notebook is the Physics-Guided ML attempt using a PINN-style architecture (D4-LensPINN):
-- Physics-aware preprocessing
-- D4-equivariant U-Net to infer convergence map `kappa`
-- Differentiable lensing physics block (Poisson/deflection/inverse lens)
-- EfficientNetV2 classifier head on `[I, kappa, S_hat, R]`
+- C8 macro AUC around `0.9715`
+- ResNet-18 macro AUC around `0.979x`
 
-Current version includes Priority 0 + 1 stabilization changes:
-- Reduced overfitting risk in EfficientNet fine-tuning policy
-- Spectral-consistent Poisson residual in physics loss
-- Physics loss ramping for phase-2 training
-- Train/validation objective consistency across warmup/full phases
-- Single-seed workflow (`SEED=42`) for time-constrained submission
+### B) `d8-task2.ipynb` (Physics-guided classification)
+Verified from notebook code and markdown:
 
----
+- stratified `80/10/10` split using `StratifiedShuffleSplit`
+- physics-guided stack with D4-equivariant components
+- main model class `D4LensPINN`
+- baseline class `ResNet18Baseline`
+- training scheduler stack again uses `LinearLR` + `CosineAnnealingLR` + `SequentialLR`
+- TTA inference path exists (`predict_with_tta`) and is explicitly D4-TTA (8 transforms)
+- Optuna search section is present (largely commented in this snapshot)
 
-## 2) Environment assumptions (both notebooks)
+### C) `d8-task3.ipynb` (DiT + OT-CFM run-after-train evaluation)
+Verified from notebook code and markdown:
 
-Both notebooks are written for Kaggle-style GPU execution.
+- pseudo-labeling with `MiniBatchKMeans`
+- core classes present: `DiT`, `DiTBlock`, `EMA`
+- inference sweep controls present: `CFG_SWEEP_VALUES`, `TEMP_SWEEP_VALUES`, `N_FID_IMAGES`, `USE_HEUN_SAMPLER`
+- sweep generation function present: `flow_sample_cfg_temp(...)`
+- FID/ISC calculation uses `torch_fidelity.calculate_metrics(...)`
+- realism evaluation computes `AUC_SCORE` with `roc_auc_score`
+- physics evaluation artifact path includes `physics_eval.png`
+- training-related blocks exist but are commented in this run-after-train notebook form (`RUN_FULL_TRAINING` references appear in commented sections)
 
-### Required setup
+## 2) Environment assumptions
+
+All notebooks assume Kaggle-style GPU execution.
+
+Core dependencies used across notebooks:
+
 - Python 3.x
-- PyTorch with CUDA
-- `numpy==1.26.4`
-- `escnn`
-- `gdown`
-- `torchvision`, `scikit-learn`, `matplotlib`, `Pillow`
+- PyTorch + CUDA
+- numpy
+- torchvision
+- scikit-learn
+- matplotlib
+- Pillow
+- gdown
 
-### Dataset expectation
-- Dataset zip downloaded via Google Drive link inside notebooks
-- Expected class folder structure under extracted dataset root
-- Images are `.npy` grayscale arrays
+Task-specific additions:
 
----
+- Task 1/2: `escnn`
+- Task 3: `torch-fidelity`, `scipy`
 
-## 3) `d8-task1-final-11.ipynb` — Detailed structure
+## 3) Output artifacts (as implemented)
 
-### Cell-by-cell flow
-1. **Cell 1 (markdown):** task statement, architecture summary, headline result.
-2. **Cell 2:** dependency install + optional kernel restart for numpy pinning.
-3. **Cell 3:** imports, seed setup, GPU placement (`cuda:0`/`cuda:1`).
-4. **Cell 4:** robust dataset download/unzip checks.
-5. **Cell 5:** root/class discovery + counts.
-6. **Cell 6 (markdown):** preprocessing strategy and augmentation rationale.
-7. **Cell 7:** dataset class, robust percentile scaling, 80/10/10 split, dataloaders.
-8. **Cell 8 (markdown):** C8 architecture explanation.
-9. **Cell 9:** C8LensNet implementation + sanity check.
-10. **Cell 10 (markdown):** ResNet baseline description.
-11. **Cell 11:** ResNet-18 baseline implementation + parameter comparison.
-12. **Cell 12 (markdown):** training setup summary.
-13. **Cell 13:** training infrastructure (optimizer/scheduler/train loop).
-14. **Cell 14:** sample visualization.
-15. **Cell 15 (markdown):** sample interpretation.
-16. **Cell 16:** debug overfit gate (300 samples).
-17. **Cell 17:** full C8 training.
-18. **Cell 18:** full ResNet-18 training.
-19. **Cell 19:** calibration-focused analysis cell.
-20. **Cell 20 (markdown):** evaluation section intro.
-21. **Cell 21:** full evaluation (ROC, confusion matrix, efficiency, curves).
-22. **Cell 22 (markdown):** long-form scientific discussion + references.
+### Task 1 typical outputs
 
-### Core modeling design
-- C8 equivariance (`rot2dOnR2(N=8)`) encodes rotational symmetry directly.
-- Group pooling creates rotation-invariant features.
-- Three-branch invariant/orientation-statistics head for classification.
-
-### Main outputs/artifacts
-- `c8_lensnet.pth`
+- `c8_lensnet.pth` (workspace may contain renamed copy `c8_lensnet (1).pth`)
 - `resnet18_baseline.pth`
 - `roc_curves.png`
 - `confusion_matrices.png`
 - `efficiency_plot.png`
 - `loss_curves.png`
-- plus optional calibration plot(s)
+- `vort_calibration.png`
 
----
+### Task 2 typical outputs
 
-## 4) `d8-task2 (6).ipynb` — Detailed structure
+- phase best checkpoints saved with `{label}_best.pth` pattern
+- workspace output folder includes:
+  - `d4_phase1_best.pth`
+  - `d4_phase2_best.pth`
+  - `resnet18_baseline_best.pth`
+- notebook also contains save call for `resnet18_baseline_final.pth`
 
-### Cell-by-cell flow
-1. **Cell 1 (markdown):** D4-LensPINN architecture overview.
-2. **Cell 2:** dependency setup and numpy pinning.
-3. **Cell 3:** imports + globals + deterministic setup.
-4. **Cell 4:** GPU assignment logic.
-5. **Cell 5:** robust dataset download/unzip.
-6. **Cell 6:** root discovery, class mapping, loader/split setup.
-7. **Cell 7:** physics preprocessing (log-intensity + Sobel cross-gradient).
-8. **Cell 8:** Poisson solver + deflection + inverse lensing block.
-9. **Cell 9:** D4-equivariant U-Net (`kappa` prediction).
-10. **Cell 10:** EfficientNetV2 classifier head (late-block fine-tuning policy).
-11. **Cell 11:** full D4-LensPINN model assembly.
-12. **Cell 12:** ResNet-18 baseline model.
-13. **Cell 13:** training framework with spectral physics loss + ramp.
-14. **Cell 14:** TTA/no-TTA prediction helpers.
-15. **Cell 15:** sample visualization.
-16. **Cell 16:** optional sanity gate (commented).
-17. **Cell 17:** optional Optuna block (commented) + best constants.
-18. **Cell 18:** dataloader recreation / worker reset safeguards.
-19. **Cell 19:** two-phase PINN training (warmup then physics-enabled).
-20. **Cell 20:** ResNet baseline training.
-21. **Cell 21:** evaluation, ROC/AUC table, confusion matrices, curves, efficiency plot.
-22. **Cell 22 (markdown):** short discussion and fallbacks.
-23. **Cells 23–24:** email helper cells (artifact sending).
+### Task 3 typical outputs
 
-### Current Task-2 architecture (implemented)
-- **Stage 0:** Physics preprocess on image `I`
-- **Stage 1:** D4-equivariant U-Net predicts `kappa >= 0`
-- **Stage 2:** Poisson solve -> potential `psi` -> deflection `alpha` -> reconstructed source `S_hat` and residual `R`
-- **Stage 3:** EfficientNetV2 head classifies concatenated physics-informed representation `[I, kappa, S_hat, R]`
+- generated image grids and evaluation figures (for example `physics_eval.png`)
+- generated/real folders for FID computations
+- checkpoint paths for `dit_otfm_best.pth` and `dit_otfm_latest.pth` are configured in code
 
-### Priority changes now active in Task 2
-- EfficientNet head fine-tuning constrained to late blocks (`features.6`, `features.7`) to reduce overfit risk.
-- Physics loss uses **spectral residual** aligned with FFT Poisson solver domain.
-- Physics loss weight is **ramped** during phase-2 instead of hard-on from epoch start.
-- Validation objective now respects the same phase mode (`use_phys_loss`) as training.
-- Training cell wires `lambda_poisson` explicitly per phase:
-  - Phase 1: `0.0`
-  - Phase 2: `BEST_LAMBDA`
+## 4) Evidence-based verification status
 
-### Main outputs/artifacts
-- `d4_lenspinn_final.pth`
-- `resnet18_baseline_final.pth`
-- `roc_curves.png`
-- `confusion_matrices.png`
-- `training_curves.png`
-- `efficiency_scatter.png`
+What is verified in this workspace:
 
----
+1. The current canonical notebook filenames are the three files listed at the top of this README.
+2. Each notebook contains the core classes/functions described above.
+3. README and architecture filenames now match existing workspace files.
 
-## 5) Recommended execution order
+What is not guaranteed by static verification alone:
 
-### For Task 1 notebook
-Run sequentially from Cell 2 onward.  
-Keep Cell 16 (debug gate) before full training cells.
+1. End-to-end runtime success in every fresh environment.
+2. Identical numeric metric values across different sessions/hardware.
+3. Availability of all external datasets/checkpoints at execution time.
 
-### For Task 2 notebook
-Run sequentially from Cell 2 onward.  
-Suggested minimal path under deadline:
-- Run setup/data/model cells
-- Skip heavy optional Optuna rerun if constants already fixed
-- Run Cell 19 (PINN) then Cell 20 (ResNet) then Cell 21 (evaluation)
+Recommended full-proof validation:
 
----
-
-## 6) Practical cautions
-
-1. **GPU memory:** if OOM, reduce `BATCH` first.
-2. **Kernel restarts:** after package pinning, rerun from imports cell.
-3. **Worker issues:** use the dataloader recreation cell before long training phases.
-4. **Runtime planning:** Task 2 is multi-phase and can take several hours.
-5. **Email cells:** last two cells include credential-based sending utility; keep secrets in environment variables and avoid hardcoding credentials.
-
----
-
-## 7) Scope statement
-
-This README intentionally covers **only**:
-- `submittable/d8-task1-final-11.ipynb`
-- `d8-task2 (6).ipynb`
-
-No other scripts or notebooks are documented here by design.
+1. Run each notebook from top in a clean GPU session.
+2. Confirm dataset and checkpoint paths resolve before long runs.
+3. Validate generation outputs exist before AUC/physics metric cells.
+4. Archive final metrics and produced artifacts per notebook.
