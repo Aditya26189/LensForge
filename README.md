@@ -34,13 +34,15 @@ See [Task 3](#task-3--ditl4--ot-cfm-generative-model-d8-task3-trainipynb--d8-tas
 lensforge/
 ├── d8-task1.ipynb               # Task 1: C8-equivariant classification
 ├── d8-task2.ipynb               # Task 2: Physics-guided D4 classification
-├── d8-task3-train.ipynb         # Task 3: DiT + OT-CFM training
-├── d8-task3-eval.ipynb          # Task 3: Inference + evaluation
+├── d8-task3.ipynb               # Task 3: DiT + OT-CFM generative model
 │
 ├── ARCHITECTURE_d8-task1.md     # C8LensNet: architecture + training protocol
 ├── ARCHITECTURE_d8-task2.md     # D4LensPINN: physics engine + two-phase schedule
-├── ARCHITECTURE_d8-task3.md     # DiT-L/4: OT-CFM + EMA + two-notebook workflow
+├── ARCHITECTURE_d8-task3.md     # DiT-L/4: OT-CFM + EMA workflow
 │
+├── d8-task1-output_files/       # Task 1 model checkpoints and outputs
+├── d8-task2-output_files/       # Task 2 phase checkpoints
+├── chekcpoint saving/           # Additional saved checkpoints
 └── README.md
 ```
 
@@ -250,30 +252,6 @@ lensing image generation.
 
 All notebooks target **Kaggle GPU (T4, 15.6 GB VRAM)**. Run cells sequentially.
 
-**Core dependencies**
-```bash
-pip install torch torchvision numpy scikit-learn matplotlib Pillow gdown
-```
-
-**Task 1 & 2 only**
-```bash
-pip install escnn
-```
-
-**Task 3 only**
-```bash
-pip install torch-fidelity scipy
-```
-
-**Dataset path**
-
-Notebooks assume:
-```
-/kaggle/input/gravitational-lensing-challenge/
-```
-Adjust the `TASK*_ROOT` constant at the top of each notebook for local execution.
-
----
 
 ## Architecture Deep-Dives
 
